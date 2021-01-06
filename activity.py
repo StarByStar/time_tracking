@@ -2,7 +2,8 @@ import datetime
 
 # класс отслеживаемых активностей
 class Activity:
-    running = True
+    # Существую активные экземпляры класса
+    running = False
 
     # Конструктор
     def __init__(self, user_id, activity_type):
@@ -10,6 +11,7 @@ class Activity:
         self.activity_type = activity_type
         # текущая дата и время начала
         self.start_date = datetime.datetime.now()
+        Activity.running = True
 
     # для теста "перегрузки" операций
     def __repr__(self):
@@ -19,15 +21,16 @@ class Activity:
     def end_activity(self, cursor):
         # текущая дата и время завершения
         self.end_date = datetime.datetime.now()
-        self.running = False
         # id последней записи в рамках сессии (надо переделать)
         id = cursor.lastrowid
         cursor.execute("UPDATE ACTIVITIES SET END_DATE = ? WHERE ID = ?", (self.end_date, id))
+        Activity.running = False
 
 # Создать в базе запись о начале активности
     def start_activity(self, cursor):
         cursor.execute("INSERT INTO ACTIVITIES "
-                       "(USER_ID, START_DATE, ACTIVITY_TYPE) VALUES (?, ?, ?)",
+                       "(USER_ID, START_DATE, ACTIVITY_TYPE) "
+                       "VALUES (?, ?, ?)",
                        (self.user, self.start_date, self.activity_type))
 
 # Проверка активности
