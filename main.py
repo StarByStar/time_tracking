@@ -1,10 +1,35 @@
 from activity import Activity
 import sqlite3
+from datetime import datetime
 from tkinter import *
-
 
 db = sqlite3.connect("database.db")
 cursor = db.cursor()
+
+# Счетчик для таймера
+sec = 0
+
+# идентификатор действия для таймера
+after_id = ''
+
+# Параметры кнопок
+h = 2
+w = 9
+btnName = "start / stop"
+
+
+# Счетчик таймера
+def tick():
+    global sec, after_id, stopWatchDict
+    after_id = root.after(1000, tick)
+    f_sec = datetime.fromtimestamp(sec).strftime("%M:%S")
+    Timer['text'] = str(f_sec)
+    sec += 1
+
+
+# Завершить таймер
+def stop_timer():
+    root.after_cancel(after_id)
 
 
 def startActivity(activity_type):
@@ -13,17 +38,33 @@ def startActivity(activity_type):
     if not Activity.running:
         global act
         act = Activity(1, activity_type)
-        act.start_activity(cursor)
-        db.commit()
+        act.start_activity(cursor, db)
     else:
-        act.end_activity(cursor)
-        db.commit()
+        act.end_activity(cursor, db)
 
-def EndActivity():
-    pass
 
-# Начало цикла отрисовки
+# функция для отключения кнопок
+def changeBtnState(buttonName):
+    if Activity.running:
+        # Запустить таймер
+        tick()
+        # Отключить все кнопки кроме нажатой
+        for button in buttonList:
+            if button != buttonName:
+                button['state'] = DISABLED
+    else:
+        # Включить все кнопки
+        for button in buttonList:
+            button['state'] = NORMAL
+        # Остановить текущий запущенный таймер
+        stop_timer()
+
+
+# Начать цикл отрисовки UI
 root = Tk()
+
+# Размер основной формы
+root.geometry("300x250")
 
 # Заголовок
 root.title("time tracking")
@@ -31,78 +72,37 @@ root.title("time tracking")
 # Иконка
 root.iconbitmap('mpv-icon.ico')
 
-# функция для отключения кнопок
-def ButtonDisabled(buttonName):
-    if Activity.running:
-        for button in buttonList:
-            if button != buttonName:
-                button['state'] = DISABLED
-    else:
-        ButtonEnabled()
-
-def ButtonEnabled():
-    if not Activity.running:
-        for button in buttonList:
-            button['state'] = NORMAL
-
 # Элементы интерфейса
+Timer = Label(root, font=("Courier", 44), text='00:00')
+
 sleepLabel = Label(root, text="Sleep")
-sleepButtonStart = Button(root, height=2, width=9, text="start / stop", command=lambda: (startActivity(1), ButtonDisabled(sleepButtonStart)))
-sleepTimer = Label(root, text="XX")
+sleepButton = Button(root, height=h, width=w, text=btnName, command=lambda: (startActivity(1), changeBtnState(sleepButton)))
 
 trainingLabel = Label(root, text="Training")
-trainingButtonStart = Button(root, height=2, width=9, text="start / stop", command=lambda: (startActivity(2), ButtonDisabled(trainingButtonStart)))
-trainingTimer = Label(root, text="XX")
+trainingButton = Button(root, height=h, width=w, text=btnName, command=lambda: (startActivity(2), changeBtnState(trainingButton)))
 
 educationLabel = Label(root, text="Education")
-educationButtonStart = Button(root, height=2, width=9, text="start / stop", command=lambda: (startActivity(3), ButtonDisabled(educationButtonStart)))
-educationTimer = Label(root, text="XX")
+educationButton = Button(root, height=h, width=w, text=btnName, command=lambda: (startActivity(3), changeBtnState(educationButton)))
 
 entertainmentLabel = Label(root, text="Entertainment")
-entertainmentButtonStart = Button(root, height=2, width=9, text="start / stop", command=lambda: (startActivity(4), ButtonDisabled(entertainmentButtonStart)))
-entertainmentTimer = Label(root, text="XX")
+entertainmentButton = Button(root, height=h, width=w, text=btnName, command=lambda: (startActivity(4), changeBtnState(entertainmentButton)))
 
 # лист кнопок для управления их состоянием
-buttonList = [sleepButtonStart, trainingButtonStart, educationButtonStart, entertainmentButtonStart]
+buttonList = [sleepButton, trainingButton, educationButton, entertainmentButton]
 
 # Разметка
-sleepLabel.grid(row=3, column=1)
-sleepButtonStart.grid(row=3, column=2)
-sleepTimer.grid(row=3, column=4)
+Timer.grid(row=1, column=1, columnspan=5)
 
-trainingLabel.grid(row=6, column=1)
-trainingButtonStart.grid(row=6, column=2)
-trainingTimer.grid(row=6, column=4)
+sleepLabel.grid(row=2, column=1)
+sleepButton.grid(row=3, column=1)
 
-educationLabel.grid(row=9, column=1)
-educationButtonStart.grid(row=9, column=2)
-educationTimer.grid(row=9, column=4)
+trainingLabel.grid(row=2, column=2)
+trainingButton.grid(row=3, column=2)
 
-entertainmentLabel.grid(row=12, column=1)
-entertainmentButtonStart.grid(row=12, column=2)
-entertainmentTimer.grid(row=12, column=4)
+educationLabel.grid(row=2, column=4)
+educationButton.grid(row=3, column=4)
 
+entertainmentLabel.grid(row=2, column=5)
+entertainmentButton.grid(row=3, column=5)
 
 root.mainloop()
-
-
-
-#sleep1 = Activity("Konstantin", "sleep", "03/01/2021 22:00")
-# my_date = datetime.datetime.now()
-# cursor.execute("INSERT INTO ACTIVITIES (USER_ID, START_DATE, ACTIVITY_TYPE) VALUES (?, ?, ?)", (1, my_date, 2))
-# cursor.execute("UPDATE ACTIVITIES SET END_DATE = ? WHERE ID = ?", (datetime.datetime.now(), cursor.lastrowid))
-# db.commit()
-#
-# cursor.execute("SELECT * from ACTIVITIES")
-# #cursor.execute("SELECT last_insert_rowid()")
-# print(cursor.lastrowid)
-# print(cursor.fetchall())
-
-# user = 1, activity = 3
-# a = Activity(1, 3)
-# a.start_activity(cursor)
-# db.commit()
-# time.sleep(20)
-# a.end_activity(cursor)
-# db.commit()
-

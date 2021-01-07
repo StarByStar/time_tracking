@@ -13,25 +13,26 @@ class Activity:
         self.start_date = datetime.datetime.now()
         Activity.running = True
 
-    # для теста "перегрузки" операций
-    def __repr__(self):
-        return 'activity: %s, %s, %s, %s' % (self.user, self.activity_type, self.start_date)
 
 # Установить для записи о начатой активности дату и время окончания
-    def end_activity(self, cursor):
+    def end_activity(self, cursor, db):
         # текущая дата и время завершения
         self.end_date = datetime.datetime.now()
         # id последней записи в рамках сессии (надо переделать)
         id = cursor.lastrowid
         cursor.execute("UPDATE ACTIVITIES SET END_DATE = ? WHERE ID = ?", (self.end_date, id))
         Activity.running = False
+        db.commit()
+
 
 # Создать в базе запись о начале активности
-    def start_activity(self, cursor):
+    def start_activity(self, cursor, db):
         cursor.execute("INSERT INTO ACTIVITIES "
                        "(USER_ID, START_DATE, ACTIVITY_TYPE) "
                        "VALUES (?, ?, ?)",
                        (self.user, self.start_date, self.activity_type))
+        db.commit()
+
 
 # Проверка активности
     def isrunning(self):
