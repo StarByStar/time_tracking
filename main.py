@@ -1,8 +1,8 @@
 from activity import Activity
 import sqlite3
-from datetime import datetime
 from tkinter import *
 import tkinter.ttk as ttk
+
 
 db = sqlite3.connect("database.db")
 cursor = db.cursor()
@@ -34,6 +34,7 @@ def tick():
     f_sec = str(hh) + ':' + str(mm) + ':' + str(sec)
     Timer['text'] = str(f_sec)
     sec += 1
+
 
 # Завершить таймер
 def stop_timer():
@@ -72,22 +73,27 @@ def changeBtnState(buttonName):
 
 # Функция сбора отчета , в параметрах передаются часы
 def report(hours):
-    activity_name ="Название активности"
-    avg_duration = "Средняя продолжительность"
-    avg_percent = "Средняя доля"
-    avg_count = "Среднее кол-во"
-    # Нужно прикрутить часы к выборке, в зависимости от типа вызванного отчета
-    cursor.execute("SELECT DISTINCT AT.ACTIVITIES_NAME,"
+    activity_name = "Activity name"
+    avg_duration = "Avg duration"
+    avg_percent = "Avg %"
+    avg_count = "Count"
+
+    # Второй параметр для выборки
+    str_hours = str(-1*hours) + ' ' + 'hours'
+
+    query = ("SELECT DISTINCT AT.ACTIVITIES_NAME,"
                           " ROUND(SUM(CAST (STRFTIME('%s', ACTS.END_DATE) AS FLOAT) - STRFTIME('%s', ACTS.START_DATE) ) / 3600, 2) AS AVGTIME,"
-                          " ROUND( (SUM(CAST (STRFTIME('%s', ACTS.END_DATE) AS FLOAT) - STRFTIME('%s', ACTS.START_DATE) ) / 3600) / 24 * 100, 2) AS AVGPERCENT,"
+                          " ROUND( (SUM(CAST (STRFTIME('%s', ACTS.END_DATE) AS FLOAT) - STRFTIME('%s', ACTS.START_DATE) ) / 3600) / ? * 100, 2) AS AVGPERCENT,"
                           " COUNT( * ) AS CNT "
                           "FROM ACTIVITIES ACTS, "
                           "     ACTIVITIES_TYPES AT "
                           "WHERE 1 = 1 "
-                          "     AND END_DATE > DATETIME('now', 'localtime', '-24 hours') "
+                          "     AND END_DATE > DATETIME('now', 'localtime', ?) "
                           "     AND ACTS.ACTIVITY_TYPE = AT.ID "
+                          "     AND ACTS.USER_ID=1 "
                           "GROUP BY AT.ACTIVITIES_NAME "
-                          "ORDER BY AT.ACTIVITIES_NAME",)
+                          "ORDER BY AT.ACTIVITIES_NAME")
+    cursor.execute(query, (hours, str_hours))
     data = cursor.fetchall()
 
     # Начало цикла отрисовки формы с отчетом
@@ -111,8 +117,70 @@ def report(hours):
 
     report.mainloop()
 
+
+# Детализация
+def detailed_report():
+
+    # Название столбцов
+    identifier = "Record id"
+    user = "User"
+    activity_name ="Activity name"
+    start_date = "Start date"
+    end_date = "End Date"
+    duration = "Duration"
+
+    # Параметры для выборки
+    hours = 720
+
+    query = ("SELECT AC.ID, "
+             "      USR.USERNAME, "
+             "      ACTS.ACTIVITIES_NAME, "
+             "      AC.START_DATE,"
+             "      AC.END_DATE,"
+             "      ROUND( (STRFTIME('%s', AC.END_DATE) - STRFTIME('%s', AC.START_DATE) ) / 3600.0, 2) "
+             "FROM ACTIVITIES AC, "
+             "      ACTIVITIES_TYPES ACTS, "
+             "      USERS USR "
+             "WHERE 1 = 1 "
+             "  AND AC.USER_ID = USR.ID "
+             "  AND AC.ACTIVITY_TYPE = ACTS.ID "
+             "  AND AC.END_DATE > DATETIME('now', 'localtime', '-720 hours');")
+    cursor.execute(query)
+    data = cursor.fetchall()
+    print(data)
+
+    # Новая форма, начало цикла
+    detailed = Tk()
+    detailed.title("Detailed")
+    table = ttk.Treeview(detailed)
+
+    table["columns"] = [identifier, user, activity_name, start_date, end_date, duration]
+    table["show"] = "headings"
+
+    for rec in data:
+       table.insert('', 'end', values=rec)
+
+    table.heading(identifier, text=identifier)
+    table.heading(user, text=user)
+    table.heading(activity_name, text=activity_name)
+    table.heading(start_date, text=start_date)
+    table.heading(end_date, text=end_date)
+    table.heading(duration, text=duration)
+
+    table.grid(row=1, column=1)
+    # Конец цикла
+    detailed.mainloop()
+
+
+# Завершение активности при закрытии главной формы
+def on_closing():
+    if Activity.running:
+        act.end_activity(cursor, db)
+    root.destroy()
+
 # Начать цикл отрисовки UI
 root = Tk()
+
 
 # Размер основной формы
 root.geometry("402x250")
@@ -139,13 +207,13 @@ entertainmentLabel = Label(root, text="Entertainment")
 entertainmentButton = Button(root, height=h, width=w, text=btnName, command=lambda: (startActivity(4), changeBtnState(entertainmentButton)))
 
 workLabel = Label(root, text="Work")
-workButton = Button(root, height=h, width=w, text = btnName, command=lambda: (startActivity(5), changeBtnState(workButton)))
+workButton = Button(root, height=h, width=w, text=btnName, command=lambda: (startActivity(5), changeBtnState(workButton)))
 
 reportLabel = Label(root, font=("Courier", 24), text="Reports")
 report1dButton = Button(root, height=h, width=w, text="1 day", command=lambda: (report(24)))
 report7dButton = Button(root, height=h, width=w, text="7 days", command=lambda: (report(168)))
 report30dButton = Button(root, height=h, width=w, text="30 days", command=lambda: (report(720)))
-
+reportDetailsButton = Button(root, height=h, width=2*w, text="Detailed report", command=lambda: (detailed_report()))
 
 # лист кнопок для управления их состоянием
 buttonList = [sleepButton, trainingButton, educationButton, entertainmentButton, workButton]
@@ -172,5 +240,7 @@ reportLabel.grid(row=4, column=1, columnspan=5)
 report1dButton.grid(row=5, column=1)
 report7dButton.grid(row=5, column=2)
 report30dButton.grid(row=5, column=3)
+reportDetailsButton.grid(row=5, column=4, columnspan=4)
 
+root.protocol("WM_DELETE_WINDOW", on_closing)
 root.mainloop()

@@ -1,5 +1,6 @@
 import datetime
 
+
 # класс отслеживаемых активностей
 class Activity:
     # Существую активные экземпляры класса
@@ -13,7 +14,6 @@ class Activity:
         self.start_date = datetime.datetime.now()
         Activity.running = True
 
-
 # Установить для записи о начатой активности дату и время окончания
     def end_activity(self, cursor, db):
         # текущая дата и время завершения
@@ -24,7 +24,6 @@ class Activity:
         Activity.running = False
         db.commit()
 
-
 # Создать в базе запись о начале активности
     def start_activity(self, cursor, db):
         cursor.execute("INSERT INTO ACTIVITIES "
@@ -33,11 +32,9 @@ class Activity:
                        (self.user, self.start_date, self.activity_type))
         db.commit()
 
-
 # Проверка активности
     def isrunning(self):
         return self.running
-
 
 # Вывод тестов только когда запускаем сам файл
 # Не выводим тесты, если файл с классом импортируется
