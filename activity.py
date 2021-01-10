@@ -6,7 +6,6 @@ class Activity:
     # Существую активные экземпляры класса
     running = False
 
-    # Конструктор
     def __init__(self, user_id, activity_type):
         self.user = user_id
         self.activity_type = activity_type
