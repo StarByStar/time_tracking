@@ -1,0 +1,1 @@
+pyinstaller main.py --onefile --noconsole --add-data activity.py;.

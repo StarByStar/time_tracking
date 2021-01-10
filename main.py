@@ -189,7 +189,7 @@ root.geometry("402x250")
 root.title("time tracking")
 
 # Иконка
-root.iconbitmap('mpv-icon.ico')
+#root.iconbitmap('mpv-icon.ico')
 
 # Элементы интерфейса
 Timer = Label(root, font=("Courier", 50), text='0:0:0')
