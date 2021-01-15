@@ -12,7 +12,7 @@ after_id = ''
 
 # Счетчик для таймера
 sec = 0
-mm = 58
+mm = 0
 hh = 0
 
 # Параметры кнопок
@@ -74,7 +74,7 @@ def changeBtnState(buttonName):
 # Функция сбора отчета , в параметрах передаются часы
 def report(hours):
     activity_name = "Activity name"
-    avg_duration = "Avg duration"
+    avg_duration = "SUM duration"
     avg_percent = "Avg %"
     avg_count = "Count"
 
@@ -82,7 +82,7 @@ def report(hours):
     str_hours = str(-1*hours) + ' ' + 'hours'
 
     query = ("SELECT DISTINCT AT.ACTIVITIES_NAME,"
-                          " ROUND(SUM(CAST (STRFTIME('%s', ACTS.END_DATE) AS FLOAT) - STRFTIME('%s', ACTS.START_DATE) ) / 3600, 2) AS AVGTIME,"
+                          " ROUND(SUM(CAST (STRFTIME('%s', ACTS.END_DATE) AS FLOAT) - STRFTIME('%s', ACTS.START_DATE) ) / 3600, 2) AS SUMTIME,"
                           " ROUND( (SUM(CAST (STRFTIME('%s', ACTS.END_DATE) AS FLOAT) - STRFTIME('%s', ACTS.START_DATE) ) / 3600) / ? * 100, 2) AS AVGPERCENT,"
                           " COUNT( * ) AS CNT "
                           "FROM ACTIVITIES ACTS, "
